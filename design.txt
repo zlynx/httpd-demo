@@ -1,0 +1,109 @@
+Rough Design for Mersive Test Project
+=====================================
+
+This will be designed to run an HTTP server as a stand-alone application
+and as a systemd service.
+
+The service will:
+ - Read configuration from default values, environment variables and
+   command-line options.
+ - Open a TCP socket listening on the configured IP address and port.
+ - Run an event loop handling:
+   - Shutdown signals which will do a clean shutdown of the service.
+     - Existing connections will complete.
+   - No new connections will be accepted.
+   - Non-blocking socket IO using poll.
+     - New incoming connections on the listen socket.
+   - New input ready to read into buffers.
+   - Ready for output to write out of buffers.
+   - Update timeout on any socket events.
+   - Socket errors or involuntary closes.
+   - Check timeout list
+    - Head of list should be oldest item
+  - Close if expired.
+  - Continue checking the list as long as items are expired.
+
+Data Structures
+===============
+
+- class Sockets
+  - linked list of Socket indexes for connection timeouts
+  On each poll event update timeout, update timeout expiration and move
+  to end of list. This should guarantee the head of the list is the oldest.
+
+  - vector of pollfd structs.
+
+  Note: The following vectors are indexed by socket handle and resized to
+  largest handle when a new Socket is added.
+  - vector of Socket pointers
+  - vector of pointer/iterator to timeout list nodes.  
+    This is for fast access to update the timeout list.
+
+  - poll function
+    This will call the poll system call, then handle updating each
+    Socket.
+    It will return the same value the system call returned.
+  - add_socket function to insert a new Socket pointer.
+  - remove_socket function to remove a Socket pointer.
+
+class Socket
+  - socket handle
+    Doubles as index into Sockets vector.
+  - struct sockaddr
+    Filled in by accept().
+  - virtual functions
+    - on_input
+    - on_output
+    - on_priority
+    - on_error
+    - on_hangup
+    - on_invalid
+
+class Listener : Socket
+  - backlog count
+  - pointer to Sockets
+
+  - virtual override for on_input
+    Inserts a new Connection into Sockets
+    Will be overridden by HTTPListener to insert a new HTTPConnection.
+
+- class Connection : Socket
+  - input buffer
+  - output buffer
+  - timeout value
+
+  - virtual function overrides for on_input, on_output.
+  - close function.
+
+- class HTTPListener : Listener
+  - override on_input to create and insert a HTTPConnection.
+
+- class HTTPConnection : Connection
+  - overrides on_input
+    - checks for a complete request
+  - checks for exceeding input size limit, closes Connection.
+  - virtual function for on_request.
+    Will be called with a HTTPRequest const reference.
+  - virtual function for write HTTPResponse const reference.
+
+class HTTPRequest
+  - Reference to HTTPConnection
+  - functions to get:
+    - the method
+  - the path
+  - headers
+  - body
+  - function to close the request
+    This will clear the request information from the Connection input buffer.
+
+- class HTTPHeadersView
+  - string_view of headers section of input buffer
+
+- class DataStore
+  - unordered_map<string, string>
+    - The key is the path string.
+  - The value is the headers and body.
+
+  - Post
+  - Get
+  - Delete

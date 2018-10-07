@@ -1,0 +1,24 @@
+#include <iostream>
+#include <memory>
+
+#include "config.h"
+#include "sockets.h"
+#include "http.h"
+
+namespace zlynx {
+	std::ostream& logger(std::clog);
+}
+
+using namespace zlynx;
+
+int main(int argc, char *argv[]) {
+	Config config(argc, argv);
+
+	logger << "Starting mersive-http server on port " << config.port << std::endl;
+	auto sockets = std::make_shared<Sockets>();
+	auto listener = std::make_shared<HTTPListener>(config.port);
+	listener->start();
+	sockets->add_socket(listener);
+	sockets->start();
+	return 0;
+}
