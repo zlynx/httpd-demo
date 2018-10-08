@@ -1,8 +1,7 @@
 Rough Design for Mersive Test Project
 =====================================
 
-This will be designed to run an HTTP server as a stand-alone application
-and as a systemd service.
+This will be designed to run a HTTP server.
 
 The service will:
  - Read configuration from default values, environment variables and
@@ -21,6 +20,32 @@ The service will:
    - Check timeout on each socket.
      - Close if expired.
   - Continue checking the list as long as items are expired.
+
+Tradeoffs
+=========
+
+This design spent too much time implementing nice to have things such as
+flexible configuration, async networking and an attempt at minimal string
+copies.
+
+The minimal string copies using string_view everywhere are nice and fast.
+But they would probably cause maintenance problems.
+
+On the plus side, one of the highest profile hotspots is in the poll event
+setup, which I think would be easy enough to squash down.
+
+The functions for handling HTTP requests and responses are pretty primitive.
+I had to trade functionality for finishing on time.
+
+Making HTTP/1.1 pipelining and 100-Continue work was probably a waste of
+time.
+
+Future Updates
+==============
+
+Run it through a profiler more times and squash the high points.
+
+Design a better API for writing HTTP API handlers.
 
 Data Structures
 ===============
@@ -83,6 +108,14 @@ class Listener : Socket
     - The key is the path string.
   - The value is the headers and body.
 
-  - Post
-  - Get
-  - Delete
+  - set
+  - get
+  - del
+
+- class AppConnection
+  This implements the actual HTTP server application. It reacts to
+  GET, POST and DELETE.
+
+  - on_get
+  - on_post
+  - on_delete
