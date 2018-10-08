@@ -107,7 +107,6 @@ namespace zlynx {
 
 	void Sockets::add_socket(ptr p, PollEvents events) {
 		unsigned h = p->get_handle();
-		logger << "adding a new socket, handle: " << h << std::endl;
 		if(sockets.size() <= h) {
 			sockets.resize(h+1);
 		}
