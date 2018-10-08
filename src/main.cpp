@@ -3,7 +3,8 @@
 
 #include "config.h"
 #include "sockets.h"
-#include "http.h"
+#include "datastore.h"
+#include "app.h"
 
 namespace zlynx {
 	std::ostream& logger(std::clog);
@@ -16,9 +17,9 @@ int main(int argc, char *argv[]) {
 
 	logger << "Starting mersive-http server on port " << config.port << std::endl;
 	auto sockets = std::make_shared<Sockets>();
-	auto listener = std::make_shared<HTTPListener>(config.port);
+	auto listener = std::make_unique<AppListener>(config.port, std::make_unique<Datastore>());
 	listener->start();
-	sockets->add_socket(listener);
+	sockets->add_socket(std::move(listener));
 	sockets->start();
 	return 0;
 }

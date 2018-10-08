@@ -1,5 +1,5 @@
 #pragma once
-#include <string_view>
+#include "container_index_view.h"
 #include "sockets.h"
 
 namespace zlynx {
@@ -15,39 +15,30 @@ namespace zlynx {
 		Action on_input() override;
 
 		protected:
+		// Called when the method, path and headers have been received.
 		virtual void on_headers();
-		virtual void on_body();
 
+		// Called depending on which method was used.
+		// If a Content-Length was provided, the body_view will be filled in.
 		virtual void on_get();
 		virtual void on_post();
 		virtual void on_delete();
 
+		void write(std::string_view str);
+		void writeln(std::string_view line = std::string_view());
+		void write_body(std::string_view body);
+		void write_error(std::string_view err);
+
+		std::string_view get_header(std::string_view header) const;
+
 		size_t search_point = 0;
-		std::string_view method_view;
-		std::string_view path_view;
-		std::string_view headers_view;
-		std::string_view body_view;
+		size_t content_length = 0;
+
+		container_index_view<decltype(input)> method_view;
+		container_index_view<decltype(input)> path_view;
+		container_index_view<decltype(input)> proto_view;
+		container_index_view<decltype(input)> headers_view;
+		container_index_view<decltype(input)> body_view;
 	};
 
-	class HTTPListener : public Listener {
-		public:
-			HTTPListener(uint16_t port, time_t connection_timeout = 5) :
-				Listener(port),
-				connection_timeout(connection_timeout)
-			{
-			}
-
-			Action on_input() override {
-				auto result = do_accept();
-				if(result.ok) {
-					auto conn = std::make_shared<HTTPConnection>(
-						result.handle, result.remote_addr, connection_timeout
-					);
-					sockets->add_socket(conn);
-				}
-				return KEEP;
-			}
-		private:
-		time_t connection_timeout = 0;
-	};
 };

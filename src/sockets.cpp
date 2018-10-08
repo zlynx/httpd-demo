@@ -37,6 +37,7 @@ namespace zlynx {
 			throw std::range_error("cannot accept a negative handle");
 		}
 		zero_addr(local_addr);
+		set_nonblocking();
 
 		timespec now;
 		throw_posix_errno_if( clock_gettime(CLOCK_MONOTONIC, &now) );
@@ -126,7 +127,7 @@ namespace zlynx {
 	}
 
 	void Sockets::start() {
-		if(pollfds.empty())
+		if(next_pollfds().empty())
 			return;
 
 		sigset_t blockset;
@@ -136,14 +137,13 @@ namespace zlynx {
 		throw_posix_errno_if( ::sigprocmask(SIG_BLOCK, &blockset, nullptr) );
 
 		running = true;
-		while(running) {
+		while(!next_pollfds().empty()) {
 			poll();
-			if(pollfds.empty())
-				running = false;
 			sigset_t pendingset;
 			throw_posix_errno_if( ::sigpending(&pendingset) );
-			if( ::sigismember(&pendingset, SIGINT) )
+			if( ::sigismember(&pendingset, SIGINT) ) {
 				running = false;
+			}
 		}
 	}
 
@@ -161,7 +161,7 @@ namespace zlynx {
 
 		int poll_result = ::poll(curr_pollfds().data(), curr_pollfds().size(), 1 * 1000);
 		throw_posix_errno_if(poll_result < 0);
-		// Run the result loop even if poll_result was 0 in rder to handle
+		// Run the result loop even if poll_result was 0 in order to handle
 		// the timeouts.
 
 		// Handle the poll results and build the next pollfds
@@ -185,7 +185,8 @@ namespace zlynx {
 						}
 					}
 				}
-				if(poll_position->revents & POLLIN) {
+				// if not running punch all the sockets on_input to poke the listeners.
+				if( (poll_position->revents & POLLIN) || !running ) {
 					act |= s->on_input();
 				}
 				if(poll_position->revents & POLLPRI) {
@@ -240,6 +241,8 @@ namespace zlynx {
 	}
 
 	Socket::Action Listener::on_input() {
+		if(!sockets->running)
+			return REMOVE;
 		auto result = do_accept();
 		if(result.ok) {
 			auto conn = std::make_shared<Connection>(result.handle, result.remote_addr);
@@ -270,10 +273,12 @@ namespace zlynx {
 		if(timeout) logger
 			<< " with timeout " << timeout;
 		logger << std::endl;
+
+		input.reserve(io_block_size);
+		output.reserve(io_block_size);
 	}
 
 	void Connection::close_output() {
-		::shutdown(handle, SHUT_WR);
 		closing = true;
 	}
 
@@ -307,6 +312,8 @@ namespace zlynx {
 		if(sockets) {
 			if(output.empty()) {
 				sockets->clear_write_event();
+				if(closing)
+					::shutdown(handle, SHUT_WR);
 			} else {
 				sockets->set_write_event();
 			}

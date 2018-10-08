@@ -1,5 +1,7 @@
 #pragma once
+#include <ostream>
 #include <exception>
+#include <cstring>
 #include <cerrno>
 
 namespace zlynx {

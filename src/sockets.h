@@ -62,18 +62,6 @@ namespace zlynx {
 		private:
 		typedef std::shared_ptr<Socket> ptr;
 
-		sig_atomic_t running = false;
-		std::vector<ptr> sockets;
-		std::array<std::vector<pollfd>, 2> pollfds;
-		unsigned pollfds_current_index = 0;
-		std::vector<pollfd>::iterator poll_position = pollfds[0].end();
-
-		std::vector<pollfd>& curr_pollfds() { return pollfds[pollfds_current_index]; }
-		std::vector<pollfd>& next_pollfds() { return pollfds[pollfds_current_index ^ 1]; }
-		void flip_pollfds() {  pollfds_current_index ^= 1; }
-
-		void poll();
-
 		public:
 		Sockets();
 
@@ -85,6 +73,21 @@ namespace zlynx {
 		void set_write_event();
 		void clear_write_event();
 		void start();
+
+		sig_atomic_t running = false;
+
+		private:
+		std::vector<ptr> sockets;
+		std::array<std::vector<pollfd>, 2> pollfds;
+		unsigned pollfds_current_index = 0;
+		std::vector<pollfd>::iterator poll_position = pollfds[0].end();
+
+		std::vector<pollfd>& curr_pollfds() { return pollfds[pollfds_current_index]; }
+		std::vector<pollfd>& next_pollfds() { return pollfds[pollfds_current_index ^ 1]; }
+		void flip_pollfds() {  pollfds_current_index ^= 1; }
+
+		void poll();
+
 	};
 
 	// A Socket that listens on a port and creates new Connections.
@@ -118,8 +121,11 @@ namespace zlynx {
 		// Add to the output buffer and set the poll flags.
 		template<class Iterator>
 		void write(Iterator begin, Iterator end) {
+			if(closing)
+				return;
 			this->output.insert(this->output.end(), begin, end);
-			this->on_output();
+			if(sockets)
+				sockets->set_write_event();
 		}
 
 		template<class Container>
@@ -134,8 +140,8 @@ namespace zlynx {
 
 		protected:
 		static constexpr size_t io_block_size = 8 * 1024;
-		std::vector<uint8_t> input;
-		std::vector<uint8_t> output;
+		std::vector<char> input;
+		std::vector<char> output;
 		// Set to true during a graceful close.
 		bool closing = false;
 	};

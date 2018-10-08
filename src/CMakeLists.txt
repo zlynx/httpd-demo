@@ -3,6 +3,8 @@ add_executable(server
 	config.cpp
 	sockets.cpp
 	http.cpp
+	datastore.cpp
+	app.cpp
 )
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
