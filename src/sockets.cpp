@@ -147,9 +147,6 @@ namespace zlynx {
 	}
 
 	void Sockets::poll() {
-		timespec now;
-		throw_posix_errno_if( clock_gettime(CLOCK_MONOTONIC, &now) );
-
 		// Ensure enough reserve that we never reallocate the vectors while
 		// inside the loop.
 		sockets.reserve(sockets.size() + 32);
@@ -162,6 +159,9 @@ namespace zlynx {
 		throw_posix_errno_if(poll_result < 0);
 		// Run the result loop even if poll_result was 0 in order to handle
 		// the timeouts.
+
+		timespec now;
+		throw_posix_errno_if( clock_gettime(CLOCK_MONOTONIC, &now) );
 
 		// Handle the poll results and build the next pollfds
 		for(
