@@ -7,7 +7,7 @@
 #include "app.h"
 
 namespace zlynx {
-	std::ostream& logger(std::clog);
+	std::ostream& logger(std::cout);
 }
 
 using namespace zlynx;
