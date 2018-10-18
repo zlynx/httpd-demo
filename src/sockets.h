@@ -21,6 +21,7 @@ namespace zlynx {
 		int get_handle() const { return handle; }
 		void set_nonblocking();
 
+		protected:
 		// Return from the on_* calls. This is whether Sockets should keep or
 		// remove the socket.
 		enum: int {
@@ -37,7 +38,6 @@ namespace zlynx {
 		virtual Action on_invalid();
 		virtual Action on_timeout();
 
-		protected:
 		// The system handle of the socket
 		unsigned handle;
 		// timeout is added to expiration on every event
@@ -135,10 +135,10 @@ namespace zlynx {
 
 		void close_output();
 
+		protected:
 		Action on_input() override;
 		Action on_output() override;
 
-		protected:
 		static constexpr size_t io_block_size = 8 * 1024;
 		std::vector<char> input;
 		std::vector<char> output;

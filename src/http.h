@@ -12,9 +12,9 @@ namespace zlynx {
 		{
 		}
 
+		protected:
 		Action on_input() override;
 
-		protected:
 		// Called when the method, path and headers have been received.
 		virtual void on_headers();
 

@@ -16,6 +16,7 @@ namespace zlynx {
 		{
 		}
 
+		protected:
 		void on_get() override;
 		void on_post() override;
 		void on_delete() override;
@@ -37,6 +38,7 @@ namespace zlynx {
 		{
 		}
 
+		protected:
 		Action on_input() override {
 			if(!sockets->running)
 				return REMOVE;
