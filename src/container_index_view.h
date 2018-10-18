@@ -8,7 +8,7 @@ namespace zlynx {
 	// Currently it only implements what is needed for this application.
 	template<class Container>
 	class container_index_view {
-		using sv = std::string_view;
+		using sv = std::basic_string_view<typename Container::value_type>;
 
 		public:
 		container_index_view()
@@ -39,12 +39,24 @@ namespace zlynx {
 			return container->data() + begin_i;
 		}
 
-		sv::iterator begin() const {
+		typename sv::iterator begin() const {
 			return data();
 		}
 
-		sv::iterator end() const {
+		typename sv::iterator end() const {
 			return data() + n;
+		}
+
+		typename sv::reference front() const {
+			return *begin();
+		}
+
+		typename sv::reference back() const {
+			return *(end() - 1);
+		}
+
+		typename sv::reference operator[](size_t i) const {
+			return *(begin() + i);
 		}
 
 		size_t size() const {
