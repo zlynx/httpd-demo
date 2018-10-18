@@ -303,6 +303,10 @@ namespace zlynx {
 		ssize_t bytes = ::read(handle, input.data()+input_point, io_block_size);
 		if(bytes < 0 && errno == EAGAIN)
 			return KEEP;
+		if(bytes < 0 && errno == ECONNRESET)
+			return REMOVE;
+		if(bytes < 0 && errno == ETIMEDOUT)
+			return REMOVE;
 		throw_posix_errno_if( bytes < 0 );
 		input.resize(input_point + bytes);
 		if(bytes == 0) {
@@ -321,6 +325,8 @@ namespace zlynx {
 				logger << "output closed on handle " << handle << std::endl;
 				return REMOVE;
 			}
+			if(errno == ECONNRESET)
+				return REMOVE;
 		}
 		throw_posix_errno_if( bytes < 0 );
 		output.erase(output.begin(), output.begin()+bytes);
