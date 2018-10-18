@@ -112,6 +112,17 @@ namespace zlynx {
 		AcceptResult do_accept();
 	};
 
+	template<typename T>
+	struct no_construct_alloc : public std::allocator<T> {
+		using std::allocator<T>::construct;
+		void construct(T*) {
+		}
+		template<typename U>
+		struct rebind {
+			using other = no_construct_alloc<U>;
+		};
+	};
+
 	// Connection reads and writes data from a Socket.
 	// It has input and output buffers.
 	class Connection : public Socket {
@@ -138,8 +149,8 @@ namespace zlynx {
 		Action on_output() override;
 
 		static constexpr size_t io_block_size = 8 * 1024;
-		std::vector<char> input;
-		std::vector<char> output;
+		std::vector<char, no_construct_alloc<char>> input;
+		std::vector<char, no_construct_alloc<char>> output;
 		// Set to true during a graceful close.
 		bool closing = false;
 	};
