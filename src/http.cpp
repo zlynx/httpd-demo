@@ -12,6 +12,8 @@
 namespace zlynx {
 	using namespace std::literals;
 
+	constexpr auto header_divider = "\r\n\r\n"sv;
+
 	template<class Iterator>
 	const char* find_string(
 		Iterator hay_begin, Iterator hay_end,
@@ -50,9 +52,13 @@ namespace zlynx {
 	}
 
 	Socket::Action HTTPConnection::on_input() {
-		constexpr auto header_divider = "\r\n\r\n"sv;
-
 		Action act = Connection::on_input();
+		while(do_request())
+			/* empty */;
+		return act;
+	}
+
+	bool HTTPConnection::do_request() {
 		// Have we received all of the headers yet?
 		if(headers_view.empty()) {
 			const char *header_end = find_string(
@@ -113,30 +119,36 @@ namespace zlynx {
 			} else if(method_view == "DELETE"sv) {
 				on_delete();
 			}
-			size_t input_end =
-				headers_view.size() +
-				header_divider.size() +
-				body_view.size();
-
-			// Reset the HTTP data.
-			search_point = 0;
-			content_length = 0;
-			method_view.reset();
-			path_view.reset();
-			proto_view.reset();
-			headers_view.reset();
-			body_view.reset();
-
-			// Clear the input buffer.
-			input.erase(input.begin(), input.begin() + input_end);
+			reset();
+			return true;
 		}
-		return act;
+		return false;
+	}
+
+	void HTTPConnection::reset() {
+		size_t input_end =
+			headers_view.size() +
+			header_divider.size() +
+			body_view.size();
+
+		// Reset the HTTP data.
+		search_point = 0;
+		content_length = 0;
+		method_view.reset();
+		path_view.reset();
+		proto_view.reset();
+		headers_view.reset();
+		body_view.reset();
+
+		// Clear the input buffer.
+		input.erase(input.begin(), input.begin() + input_end);
 	}
 
 	void HTTPConnection::on_headers() {
 		// Look for Content-Length
 		constexpr auto content_length_sv = "\r\nContent-Length: "sv;
 		constexpr auto expect_sv = "\r\nExpect: "sv;
+		constexpr auto connection_sv = "\r\nConnection: "sv;
 		auto content_length_view = get_header(content_length_sv);
 		if(!content_length_view.empty()) {
 			auto result = std::from_chars(
@@ -153,6 +165,14 @@ namespace zlynx {
 			write(proto_view);
 			writeln(" 100 Continue");
 			writeln();
+		}
+		if(proto_view == "HTTP/1.0"sv) {
+			auto connection_view = get_header(connection_sv);
+			if(connection_view == "Keep-Alive") {
+				keep_alive = true;
+			} else {
+				keep_alive = false;
+			}
 		}
 	}
 
@@ -186,8 +206,17 @@ namespace zlynx {
 		write("Content-Length: ");
 		Connection::write(buf.data(), result.ptr);
 		writeln();
+		if(keep_alive) {
+			if(proto_view == "HTTP/1.0"sv) {
+				writeln("Connection: Keep-Alive");
+			}
+		} else {
+			writeln("Connection: close");
+		}
 		writeln();
 		write(body);
+		if(!keep_alive)
+			close_output();
 	}
 
 	void HTTPConnection::write_error(std::string_view err) {

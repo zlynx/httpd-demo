@@ -33,12 +33,19 @@ namespace zlynx {
 
 		size_t search_point = 0;
 		size_t content_length = 0;
+		bool keep_alive = true;
 
 		container_index_view<decltype(input)> method_view;
 		container_index_view<decltype(input)> path_view;
 		container_index_view<decltype(input)> proto_view;
 		container_index_view<decltype(input)> headers_view;
 		container_index_view<decltype(input)> body_view;
+
+		private:
+		// Look for and process one request out of the input.
+		// Return true if a request was processed.
+		bool do_request();
+		void reset();
 	};
 
 };
