@@ -12,9 +12,9 @@ namespace zlynx {
 			writeln(" 404 Not Found");
 		} else {
 			writeln(" 200 OK");
+			write("Content-Type: ");
+			writeln(entry.content_type);
 		}
-		write("Content-Type: ");
-		writeln(entry.content_type);
 		write_body(entry.body);
 	}
 
