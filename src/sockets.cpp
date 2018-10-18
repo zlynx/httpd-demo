@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 #include "sockets.h"
 #include "errors.h"
 
@@ -125,6 +126,13 @@ namespace zlynx {
 			poll_position->events &= ~POLLOUT;
 	}
 
+	static std::shared_ptr<Sockets> handler_target;
+	static
+	void handler(int) {
+		if(handler_target)
+			handler_target->running = false;
+	}
+
 	void Sockets::start() {
 		if(next_pollfds().empty())
 			return;
@@ -132,17 +140,16 @@ namespace zlynx {
 		sigset_t blockset;
 		throw_posix_errno_if( ::sigemptyset(&blockset) );
 		throw_posix_errno_if( ::sigaddset(&blockset, SIGPIPE) );
-		throw_posix_errno_if( ::sigaddset(&blockset, SIGINT) );
 		throw_posix_errno_if( ::sigprocmask(SIG_BLOCK, &blockset, nullptr) );
 
 		running = true;
+		struct sigaction sigact;
+		std::memset(&sigact, 0, sizeof sigact);
+		sigact.sa_handler = handler;
+		sigaction(SIGINT, &sigact, nullptr);
+		handler_target = shared_from_this();
 		while(!next_pollfds().empty()) {
 			poll();
-			sigset_t pendingset;
-			throw_posix_errno_if( ::sigpending(&pendingset) );
-			if( ::sigismember(&pendingset, SIGINT) ) {
-				running = false;
-			}
 		}
 	}
 
@@ -152,11 +159,20 @@ namespace zlynx {
 		sockets.reserve(sockets.size() + 32);
 
 		flip_pollfds();
+
+		int poll_result = ::poll(curr_pollfds().data(), curr_pollfds().size(), 1 * 1000);
+		if(poll_result < 0) {
+			if(errno == EINTR) {
+				// Run the loop anyway.
+				// There are checks for !running
+			} else {
+				throw_posix_errno_if(poll_result < 0);
+			}
+		}
+
 		// Empty out the next pollfds
 		next_pollfds().clear();
 
-		int poll_result = ::poll(curr_pollfds().data(), curr_pollfds().size(), 1 * 1000);
-		throw_posix_errno_if(poll_result < 0);
 		// Run the result loop even if poll_result was 0 in order to handle
 		// the timeouts.
 

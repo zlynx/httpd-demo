@@ -121,8 +121,6 @@ namespace zlynx {
 		// Add to the output buffer and set the poll flags.
 		template<class Iterator>
 		void write(Iterator begin, Iterator end) {
-			if(closing)
-				return;
 			this->output.insert(this->output.end(), begin, end);
 			if(sockets)
 				sockets->set_write_event();
