@@ -41,7 +41,7 @@ namespace zlynx {
 	void AppConnection::on_post() {
 		auto content_type_view = get_header(content_type_s);
 		//logger << "POST " << path_view << ' ' << content_type_view << '\n' << body_view << '\n';
-		logger << "POST " << path_view << ' ' << content_type_view << '\n';
+		logger << "POST " << path_view << ' ' << content_type_view << " body size: " << body_view.size() << '\n';
 
 		store->set(path_view, Entry{content_type_view,  body_view});
 
