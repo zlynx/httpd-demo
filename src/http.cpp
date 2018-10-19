@@ -269,11 +269,10 @@ namespace zlynx {
 			}
 		} else {
 			writeln("Connection: close");
+			close_output();
 		}
 		writeln();
 		write(body);
-		if(!keep_alive)
-			close_output();
 	}
 
 	void HTTPConnection::write_error(std::string_view err) {
