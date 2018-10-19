@@ -30,11 +30,10 @@ namespace zlynx {
 			writeln(" 201 Created");
 			write("Location: ");
 			writeln(path_view);
-			writeln("Content-Length: 0");
 		} else {
 			writeln(" 204 No Content");
 		}
-		writeln();
+		write_body();
 	}
 
 	void AppConnection::on_post() {
@@ -48,8 +47,7 @@ namespace zlynx {
 		writeln(" 201 Created");
 		write("Location: ");
 		writeln(path_view);
-		writeln("Content-Length: 0");
-		writeln();
+		write_body();
 	}
 
 	void AppConnection::on_delete() {
@@ -59,7 +57,7 @@ namespace zlynx {
 
 		write(proto_view);
 		writeln(" 204 No Content");
-		writeln();
+		write_body();
 	}
 }
 

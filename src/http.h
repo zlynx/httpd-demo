@@ -27,7 +27,7 @@ namespace zlynx {
 
 		void write(std::string_view str);
 		void writeln(std::string_view line = std::string_view());
-		void write_body(std::string_view body);
+		void write_body(std::string_view body = std::string_view());
 		void write_error(std::string_view err);
 
 		std::string_view get_header(std::string_view header) const;
