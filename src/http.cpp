@@ -201,7 +201,7 @@ namespace zlynx {
 		// Look for Content-Length
 		static const auto content_length_s = "content-length"s;
 		static const auto expect_s = "expect"s;
-		static const auto connection_s = "connection: "s;
+		static const auto connection_s = "connection"s;
 		auto content_length_view = get_header(content_length_s);
 		if(!content_length_view.empty()) {
 			auto result = std::from_chars(
