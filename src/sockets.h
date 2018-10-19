@@ -132,8 +132,12 @@ namespace zlynx {
 		// Add to the output buffer and set the poll flags.
 		template<class Iterator>
 		void write(Iterator begin, Iterator end) {
-			this->output.insert(this->output.end(), begin, end);
-			if(sockets)
+			if(static_cast<size_t>(end - begin) >= io_direct_write_size) {
+				write_directly(begin, end);
+			} else {
+				this->output.insert(this->output.end(), begin, end);
+			}
+			if(sockets && !this->output.empty())
 				sockets->set_write_event();
 		}
 
@@ -148,7 +152,10 @@ namespace zlynx {
 		Action on_input() override;
 		Action on_output() override;
 
+		void write_directly(const char* begin, const char* end);
+
 		static constexpr size_t io_block_size = 8 * 1024;
+		static constexpr size_t io_direct_write_size = 4 * 1024;
 		std::vector<char, no_construct_alloc<char>> input;
 		std::vector<char, no_construct_alloc<char>> output;
 		// Set to true during a graceful close.

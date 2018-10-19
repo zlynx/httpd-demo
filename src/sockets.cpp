@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <sys/uio.h>
 #include "sockets.h"
 #include "errors.h"
 
@@ -342,4 +343,49 @@ namespace zlynx {
 		return KEEP;
 	}
 
+	void Connection::write_directly(const char* begin, const char* end) {
+		constexpr size_t iov_count = 2;
+		std::array<iovec, iov_count> iov = {
+			iovec{ const_cast<char*>(output.data()), output.size() },
+			iovec{ const_cast<char*>(begin), static_cast<size_t>(end-begin) },
+		};
+		ssize_t bytes_target = 0;
+		for(auto &x: iov) {
+			bytes_target += x.iov_len;
+		};
+
+		ssize_t bytes_written = ::writev(handle, iov.data(), iov.size());
+		if(bytes_written < 0) {
+			switch(errno) {
+				case EAGAIN:
+				case EPIPE:
+				case ECONNRESET:
+					// Do nothing.
+					// Let the following code write it
+					// into the output buffer.
+					bytes_written = 0;
+					break;
+				default:
+					throw_posix_errno_if(bytes_written<0);
+			}
+		}
+		if(static_cast<size_t>(bytes_written) >= iov[0].iov_len) {
+			output.clear();
+			begin += bytes_written - iov[0].iov_len;
+		} else {
+			// Trim off the written part of output buffer.
+			output.erase(output.begin(), output.begin()+bytes_written);
+		}
+		// Save any remaining bytes in output buffer.
+		output.insert(this->output.end(), begin, end);
+		if(sockets) {
+			if(output.empty()) {
+				sockets->clear_write_event();
+				if(closing)
+					::shutdown(handle, SHUT_WR);
+			} else {
+				sockets->set_write_event();
+			}
+		}
+	}
 };
