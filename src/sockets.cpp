@@ -80,7 +80,10 @@ namespace zlynx {
 	}
 
 	Socket::Action Socket::on_error() {
-		logger << "error on handle " << handle << std::endl;
+		int err;
+		socklen_t err_size = sizeof err;
+		throw_posix_errno_if( getsockopt(handle, SOL_SOCKET, SO_ERROR, &err, &err_size) );
+		logger << "error on handle " << handle << ": " << err << std::endl;
 		return REMOVE;
 	}
 
