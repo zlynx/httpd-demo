@@ -1,10 +1,13 @@
 #include <string_view>
+#include <algorithm>
 #include <array>
 #include <vector>
 #include <cstring>
 #include <iostream>
+#include <iterator>
 #include <charconv>
 #include <sstream>
+#include <cctype>
 #include "http.h"
 #include "errors.h"
 #include "container_index_view.h"
@@ -144,14 +147,62 @@ namespace zlynx {
 
 		// Clear the input buffer.
 		input.erase(input.begin(), input.begin() + input_end);
+
+		header_map.clear();
+	}
+
+	static
+	std::string to_lower_string(std::string_view s) {
+		std::string result;
+		result.reserve(s.size());
+		std::transform(
+			begin(s), end(s),
+			std::back_inserter(result),
+			::tolower
+		);
+		return result;
+	}
+
+	void HTTPConnection::build_header_map() {
+		constexpr auto line_end_sv = "\r\n"sv;
+		constexpr auto key_end_sv = ":"sv;
+		const char *line_end = find_string(
+			headers_view.begin(), headers_view.end(),
+			line_end_sv
+		);
+		if(!line_end)
+			throw std::runtime_error("corrupt headers");
+		while(line_end != headers_view.end()) {
+			// Advance to next line.
+			const char *line_start = line_end + line_end_sv.size();
+			const char *key_end = find_string(
+				line_start, headers_view.end(),
+				key_end_sv
+			);
+			line_end = find_string(
+				line_start, headers_view.end(),
+				line_end_sv
+			);
+			if(!line_end)
+				line_end = headers_view.end();
+			if(!key_end || key_end > line_end)
+				throw std::runtime_error("corrupt header line");
+			const char *value_start = key_end + 2;
+			header_map.emplace(
+				to_lower_string(std::string_view(line_start, key_end-line_start)),
+				container_index_view(input, std::string_view(value_start, line_end - value_start))
+			);
+		}
 	}
 
 	void HTTPConnection::on_headers() {
+		// Convert everything to a hash map with lower-cased keys.
+		build_header_map();
 		// Look for Content-Length
-		constexpr auto content_length_sv = "\r\nContent-Length: "sv;
-		constexpr auto expect_sv = "\r\nExpect: "sv;
-		constexpr auto connection_sv = "\r\nConnection: "sv;
-		auto content_length_view = get_header(content_length_sv);
+		static const auto content_length_s = "content-length"s;
+		static const auto expect_s = "expect"s;
+		static const auto connection_s = "connection: "s;
+		auto content_length_view = get_header(content_length_s);
 		if(!content_length_view.empty()) {
 			auto result = std::from_chars(
 				content_length_view.begin(), content_length_view.end(),
@@ -161,7 +212,7 @@ namespace zlynx {
 				write_error("400 Bad Request");
 			}
 		}
-		auto expect_view = get_header(expect_sv);
+		auto expect_view = get_header(expect_s);
 		if(expect_view == "100-continue"sv) {
 			// Immediatly send a 100-continue
 			write(proto_view);
@@ -169,7 +220,7 @@ namespace zlynx {
 			writeln();
 		}
 		if(proto_view == "HTTP/1.0"sv) {
-			auto connection_view = get_header(connection_sv);
+			auto connection_view = get_header(connection_s);
 			if(connection_view == "Keep-Alive") {
 				keep_alive = true;
 			} else {
@@ -238,23 +289,10 @@ namespace zlynx {
 	// "\r\nContent-Length: "
 	// Yes a little ugly but makes things easier to search.
 	// Could use a macro to stringify these.
-	std::string_view HTTPConnection::get_header(std::string_view header) const {
-		const char *pos = find_string(
-			headers_view.begin(), headers_view.end(),
-			header
-		);
-		if(pos) {
-			const char *line_end = find_string(
-				pos + header.size(), headers_view.end(),
-				"\r\n"sv
-			);
-			const char *begin = pos + header.size();
-			size_t n = headers_view.end() - begin;
-			if(line_end) {
-				n = line_end - begin;
-			}
-			return std::string_view(begin, n);
-		}
+	std::string_view HTTPConnection::get_header(const std::string& header) const {
+		auto i = header_map.find(header);
+		if(i != header_map.end())
+			return i->second;
 		return std::string_view();
 	}
 };

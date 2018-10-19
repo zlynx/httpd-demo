@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_map>
 #include "container_index_view.h"
 #include "sockets.h"
 
@@ -30,7 +31,7 @@ namespace zlynx {
 		void write_body(std::string_view body = std::string_view());
 		void write_error(std::string_view err);
 
-		std::string_view get_header(std::string_view header) const;
+		std::string_view get_header(const std::string& header) const;
 
 		size_t search_point = 0;
 		size_t content_length = 0;
@@ -47,6 +48,10 @@ namespace zlynx {
 		// Return true if a request was processed.
 		bool do_request();
 		void reset();
+		void build_header_map();
+
+		std::unordered_map<std::string, container_index_view<decltype(input)>> header_map;
+
 	};
 
 };

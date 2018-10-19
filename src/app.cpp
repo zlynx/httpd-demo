@@ -2,6 +2,8 @@
 #include "app.h"
 
 namespace zlynx {
+	static const auto content_type_s = "content-type"s;
+
 	void AppConnection::on_get() {
 		logger << "GET " << path_view << "\n";
 
@@ -19,7 +21,7 @@ namespace zlynx {
 	}
 
 	void AppConnection::on_put() {
-		auto content_type_view = get_header("\r\nContent-Type: ");
+		auto content_type_view = get_header(content_type_s);
 		logger << "PUT " << path_view << ' ' << content_type_view << '\n';
 
 		auto entry = store->get(path_view);
@@ -37,7 +39,7 @@ namespace zlynx {
 	}
 
 	void AppConnection::on_post() {
-		auto content_type_view = get_header("\r\nContent-Type: ");
+		auto content_type_view = get_header(content_type_s);
 		//logger << "POST " << path_view << ' ' << content_type_view << '\n' << body_view << '\n';
 		logger << "POST " << path_view << ' ' << content_type_view << '\n';
 
