@@ -58,8 +58,8 @@ namespace zlynx {
 		store->del(path_view);
 
 		write(proto_view);
-		writeln(" 200 OK");
-		write_body("");
+		writeln(" 204 No Content");
+		writeln();
 	}
 }
 
