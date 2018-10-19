@@ -107,7 +107,7 @@ namespace zlynx {
 		Action on_input() override;
 
 		protected:
-		int backlog = 5;
+		int backlog = 256;
 
 		AcceptResult do_accept();
 	};
