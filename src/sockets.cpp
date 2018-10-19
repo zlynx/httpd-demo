@@ -90,7 +90,8 @@ namespace zlynx {
 
 	Socket::Action Socket::on_hangup() {
 		logger << "hangup on handle " << handle << std::endl;
-		return REMOVE;
+		// Keep the socket. It may still have readable data.
+		return KEEP;
 	}
 
 	Socket::Action Socket::on_invalid() {
