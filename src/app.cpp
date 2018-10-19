@@ -18,6 +18,25 @@ namespace zlynx {
 		write_body(entry.body);
 	}
 
+	void AppConnection::on_put() {
+		auto content_type_view = get_header("\r\nContent-Type: ");
+		logger << "PUT " << path_view << ' ' << content_type_view << '\n';
+
+		auto entry = store->get(path_view);
+		store->set(path_view, Entry{content_type_view,  body_view});
+
+		write(proto_view);
+		if(entry.body.empty()) {
+			writeln(" 201 Created");
+			write("Location: ");
+			writeln(path_view);
+			writeln("Content-Length: 0");
+		} else {
+			writeln(" 204 No Content");
+		}
+		writeln();
+	}
+
 	void AppConnection::on_post() {
 		auto content_type_view = get_header("\r\nContent-Type: ");
 		//logger << "POST " << path_view << ' ' << content_type_view << '\n' << body_view << '\n';

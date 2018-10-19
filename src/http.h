@@ -21,6 +21,7 @@ namespace zlynx {
 		// Called depending on which method was used.
 		// If a Content-Length was provided, the body_view will be filled in.
 		virtual void on_get();
+		virtual void on_put();
 		virtual void on_post();
 		virtual void on_delete();
 

@@ -18,6 +18,7 @@ namespace zlynx {
 
 		protected:
 		void on_get() override;
+		void on_put() override;
 		void on_post() override;
 		void on_delete() override;
 

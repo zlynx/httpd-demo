@@ -114,6 +114,8 @@ namespace zlynx {
 			// We have headers and body (if any), now call the on_method
 			if(method_view == "GET"sv) {
 				on_get();
+			} else if(method_view == "PUT"sv) {
+				on_put();
 			} else if(method_view == "POST"sv) {
 				on_post();
 			} else if(method_view == "DELETE"sv) {
@@ -178,6 +180,10 @@ namespace zlynx {
 
 	void HTTPConnection::on_get() {
 		logger << "GET " << path_view << "\n";
+	}
+
+	void HTTPConnection::on_put() {
+		logger << "PUT " << path_view << "\n";
 	}
 
 	void HTTPConnection::on_post() {
