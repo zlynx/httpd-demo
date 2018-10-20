@@ -152,13 +152,17 @@ namespace zlynx {
 	}
 
 	static
+	int tolower_bithack(int c) {
+		return ((c & 0x40) >> 1) | c;
+	}
+
+	static
 	std::string to_lower_string(std::string_view s) {
-		std::string result;
-		result.reserve(s.size());
+		std::string result(s.size(), 0);
 		std::transform(
 			begin(s), end(s),
-			std::back_inserter(result),
-			::tolower
+			begin(result),
+			tolower_bithack
 		);
 		return result;
 	}
