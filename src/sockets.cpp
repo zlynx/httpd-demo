@@ -229,6 +229,8 @@ namespace zlynx {
 					<< "exception while processing handle " << poll_position->fd
 					<< ": " << e.what()
 					<< std::endl;
+				// Some bad thing happened so shut it off.
+				act = Socket::REMOVE;
 			}
 			if(act == Socket::KEEP) {
 				next_pollfds().emplace_back( pollfd{poll_position->fd, poll_position->events, 0} );
