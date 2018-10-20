@@ -215,6 +215,7 @@ namespace zlynx {
 			if(result.ec != std::errc()) {
 				write_error("400 Bad Request");
 			}
+			input.reserve(input.size() + content_length);
 		}
 		auto expect_view = get_header(expect_s);
 		if(expect_view == "100-continue"sv) {
