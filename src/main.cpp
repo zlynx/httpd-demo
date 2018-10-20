@@ -9,10 +9,11 @@
 namespace zlynx {
 	struct null_ostream : public std::ostream {};
 	template<typename T>
-	std::ostream& operator<<(std::ostream& os, const T&) { return os; }
-	std::ostream& operator<<(std::ostream& os, const char*) { return os; }
+	null_ostream& operator<<(null_ostream& os, const T&) { return os; }
+	null_ostream& operator<<(null_ostream& os, const char*) { return os; }
 	null_ostream null_os;
-	std::ostream& logger(null_os);
+
+	std::ostream& logger(std::cout);
 }
 
 using namespace zlynx;
