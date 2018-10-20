@@ -289,10 +289,6 @@ namespace zlynx {
 		close_output();
 	}
 
-	// this expects a header search string that looks like:
-	// "\r\nContent-Length: "
-	// Yes a little ugly but makes things easier to search.
-	// Could use a macro to stringify these.
 	std::string_view HTTPConnection::get_header(const std::string& header) const {
 		auto i = header_map.find(header);
 		if(i != header_map.end())
