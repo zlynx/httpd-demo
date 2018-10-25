@@ -61,6 +61,14 @@ namespace zlynx {
 		return act;
 	}
 
+	HTTPConnection::HTTPConnection(int h, const sockaddr_in6 &remote, time_t timeout):
+		Connection(h, remote, timeout)
+	{
+		int val = 1;
+		throw_posix_errno_if( ::setsockopt(handle, IPPROTO_TCP, TCP_NODELAY, &val, sizeof val) );
+	}
+
+
 	bool HTTPConnection::do_request() {
 		// Have we received all of the headers yet?
 		if(headers_view.empty()) {

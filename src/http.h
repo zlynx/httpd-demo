@@ -8,10 +8,7 @@ namespace zlynx {
 
 	class HTTPConnection : public Connection {
 		public:
-		HTTPConnection(int h, const sockaddr_in6 &remote, time_t timeout = 0):
-			Connection(h, remote, timeout)
-		{
-		}
+		HTTPConnection(int h, const sockaddr_in6 &remote, time_t timeout = 0);
 
 		protected:
 		Action on_input() override;
