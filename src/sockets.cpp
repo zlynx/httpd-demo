@@ -383,7 +383,7 @@ namespace zlynx {
 			output.erase(output.begin(), output.begin()+bytes_written);
 		}
 		// Save any remaining bytes in output buffer.
-		output.insert(this->output.end(), begin, end);
+		output.insert(output.end(), begin, end);
 		if(sockets) {
 			if(output.empty()) {
 				sockets->clear_write_event();

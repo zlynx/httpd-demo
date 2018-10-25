@@ -3,6 +3,7 @@
 #include <vector>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <signal.h>
 #include <poll.h>
 
@@ -133,7 +134,7 @@ namespace zlynx {
 		template<class Iterator>
 		void write(Iterator begin, Iterator end) {
 			if(static_cast<size_t>(end - begin) >= io_direct_write_size) {
-				write_directly(begin, end);
+				this->write_directly(begin, end);
 			} else {
 				this->output.insert(this->output.end(), begin, end);
 			}
